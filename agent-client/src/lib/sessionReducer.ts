@@ -1,4 +1,4 @@
-import { SessionState, TimelineRow, Turn } from "./sessionType";
+import { SessionState, Turn, TimelineRow } from "./sessionType";
 import { applyTurnEvent } from "./turnReducer";
 import { TurnEvent } from "./turnTypes";
 
@@ -11,13 +11,10 @@ type SessionEvent =
     | TurnEvent;
 
 export function applySessionEvent(state: SessionState, event: SessionEvent): SessionState {
-    const now = Date.now()
+    const now = Date.now();
 
     if (event.kind === "ping" || event.kind === "pong" || event.kind === "context" || event.kind === "error") {
-        return {
-            ...state,
-            timeline: (appendOrBatchTimeline(state.timeline, event, now))
-        };
+        return { ...state, timeline: appendOrBatchTimeline(state.timeline, event, now) };
     }
 
     if (event.kind === "userMessage") {
@@ -25,12 +22,13 @@ export function applySessionEvent(state: SessionState, event: SessionEvent): Ses
         return {
             turns: [...sealed, { id: crypto.randomUUID(), role: "user", content: event.content }],
             currentAgentTurn: null,
-            timeline: appendOrBatchTimeline(state.timeline, event, now)
+            timeline: appendOrBatchTimeline(state.timeline, event, now),
         };
     }
 
     const currentBlocks = state.currentAgentTurn?.blocks ?? [];
     const currentStreamEnded = state.currentAgentTurn?.streamEnded ?? false;
+
     const innerResult = applyTurnEvent(
         { blocks: currentBlocks, streamEnded: currentStreamEnded },
         event
@@ -43,41 +41,47 @@ export function applySessionEvent(state: SessionState, event: SessionEvent): Ses
         streamEnded: innerResult.streamEnded,
     };
 
-    const updatedTimeline = appendOrBatchTimeline(state.timeline, event, now)
+    const activeBlockId =
+        event.kind === "token" && innerResult.blocks.length > 0
+            ? innerResult.blocks[innerResult.blocks.length - 1].id
+            : undefined;
+
+    const updatedTimeline = appendOrBatchTimeline(state.timeline, event, now, activeBlockId);
 
     if (innerResult.streamEnded) {
-        return {
-            turns: [...state.turns, updatedTurn],
-            currentAgentTurn: null,
-            timeline: updatedTimeline
-        };
+        return { turns: [...state.turns, updatedTurn], currentAgentTurn: null, timeline: updatedTimeline };
     }
-
     return { ...state, currentAgentTurn: updatedTurn, timeline: updatedTimeline };
 }
 
-function appendOrBatchTimeline(timeline: TimelineRow[], event: SessionEvent, now: number): TimelineRow[] {
+function appendOrBatchTimeline(
+    timeline: TimelineRow[],
+    event: SessionEvent,
+    now: number,
+    blockId?: string
+): TimelineRow[] {
     if (event.kind === "token") {
-        const lastRow = timeline[timeline.length - 1]
+        const lastRow = timeline[timeline.length - 1];
 
         if (lastRow && lastRow.kind === "tokenBatch") {
             const updatedBatch: TimelineRow = {
                 ...lastRow,
                 tokenCount: lastRow.tokenCount + 1,
                 text: lastRow.text + event.text,
-                lastTokenAt: now
+                lastTokenAt: now,
             };
             return [...timeline.slice(0, -1), updatedBatch];
         }
+
         return [...timeline, {
             kind: "tokenBatch",
-            id: crypto.randomUUID(),
+            id: blockId ?? crypto.randomUUID(),
             streamId: event.streamId,
             tokenCount: 1,
             text: event.text,
             startedAt: now,
-            lastTokenAt: now
-        }]
+            lastTokenAt: now,
+        }];
     }
     const id = crypto.randomUUID();
     switch (event.kind) {

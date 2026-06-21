@@ -28,7 +28,13 @@ const ChatPanel = ({ agentClient }: ChatPanelProps) => {
                                 <div className="flex flex-col gap-3">
                                     {item.blocks?.map((block, i) =>
                                         block.type === "text"
-                                            ? <TextBlock key={block.id || i} content={block.content} />
+                                            ? <TextBlock
+                                                key={block.id || i}
+                                                id={block.id}
+                                                content={block.content}
+                                                isHighlighted={agentClient.highlightedId === block.id}
+                                                onSelect={agentClient.toggleHighlight}
+                                              />
                                             : <ToolCallCard
                                                 key={block.id || i}
                                                 toolBlock={block}
@@ -48,7 +54,13 @@ const ChatPanel = ({ agentClient }: ChatPanelProps) => {
                             <div className="flex flex-col gap-3">
                                 {agentClient.currentAgentTurn.blocks?.map((block, i) =>
                                     block.type === "text"
-                                        ? <TextBlock key={block.id || i} content={block.content} />
+                                        ? <TextBlock
+                                            key={block.id || i}
+                                            id={block.id}
+                                            content={block.content}
+                                            isHighlighted={agentClient.highlightedId === block.id}
+                                            onSelect={agentClient.toggleHighlight}
+                                          />
                                         : <ToolCallCard
                                             key={block.id || i}
                                             toolBlock={block}

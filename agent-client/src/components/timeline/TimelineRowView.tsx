@@ -15,17 +15,16 @@ const TimelineRowView = React.memo(function TimelineRowView({ row, isHighlighted
         }
     }, [isHighlighted]);
 
-    const highlightClass = isHighlighted
-        ? "ring-2 ring-blue-400 bg-blue-50"
-        : "";
+    const highlightClass = isHighlighted ? "ring-2 ring-blue-400 bg-blue-50" : "";
 
     switch (row.kind) {
         case "tokenBatch":
-            // Not part of the call_id linking scheme — no click/highlight,
-            // but still gets the ref so layout stays consistent if you
-            // ever want to extend linking to text segments later.
             return (
-                <div ref={ref}>
+                <div
+                    ref={ref}
+                    onClick={() => onSelect(row.id)}
+                    className={`cursor-pointer rounded-md px-2 py-1.5 text-sm text-gray-600 hover:bg-gray-100 transition-colors ${highlightClass}`}
+                >
                     <TokenBatchRow row={row} />
                 </div>
             );
@@ -53,46 +52,17 @@ const TimelineRowView = React.memo(function TimelineRowView({ row, isHighlighted
             );
 
         case "context":
-            return (
-                <div ref={ref} className="px-2 py-1.5 text-sm text-gray-600">
-                    context: {row.contextId}
-                </div>
-            );
-
+            return <div ref={ref} className="px-2 py-1.5 text-sm text-gray-600">context: {row.contextId}</div>;
         case "ping":
-            return (
-                <div ref={ref} className="px-2 py-1.5 text-xs text-gray-400 font-mono">
-                    PING {row.challenge || "(corrupt)"}
-                </div>
-            );
-
+            return <div ref={ref} className="px-2 py-1.5 text-xs text-gray-400 font-mono">PING {row.challenge || "(corrupt)"}</div>;
         case "pong":
-            return (
-                <div ref={ref} className="px-2 py-1.5 text-xs text-gray-400 font-mono">
-                    PONG {row.echo}
-                </div>
-            );
-
+            return <div ref={ref} className="px-2 py-1.5 text-xs text-gray-400 font-mono">PONG {row.echo}</div>;
         case "error":
-            return (
-                <div ref={ref} className="px-2 py-1.5 text-sm text-red-600">
-                    ERROR {row.code}
-                </div>
-            );
-
+            return <div ref={ref} className="px-2 py-1.5 text-sm text-red-600">ERROR {row.code}</div>;
         case "streamEnd":
-            return (
-                <div ref={ref} className="px-2 py-1.5 text-xs text-gray-400 italic">
-                    stream ended
-                </div>
-            );
-
+            return <div ref={ref} className="px-2 py-1.5 text-xs text-gray-400 italic">stream ended</div>;
         case "userMessage":
-            return (
-                <div ref={ref} className="px-2 py-1.5 text-sm font-medium text-gray-800">
-                    user: {row.content}
-                </div>
-            );
+            return <div ref={ref} className="px-2 py-1.5 text-sm font-medium text-gray-800">user: {row.content}</div>;
     }
 }, (prev, next) => prev.row === next.row && prev.isHighlighted === next.isHighlighted);
 
