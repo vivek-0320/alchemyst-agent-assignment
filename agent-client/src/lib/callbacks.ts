@@ -16,6 +16,10 @@ export interface AgentClientCallbacks {
     precedingText: string
   ) => void;
 
+  onPing : (challenge: string) => void
+
+  onPong : (echo : string) => void
+
   onToolResult: (callId: string, result: Record<string, unknown>) => void;
 
   onContext: (contextId: string, data: Record<string, unknown>) => void;

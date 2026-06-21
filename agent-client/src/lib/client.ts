@@ -100,7 +100,7 @@ export class AgentClient {
     socket.onerror = (event: Event) => {
       if (this.socket !== socket) return;
 
-      console.error("[AgentClient] WebSocket error", event);
+      console.log("[AgentClient] WebSocket error", event);
     };
 
     socket.onclose = (event: CloseEvent) => {
@@ -197,7 +197,9 @@ export class AgentClient {
   }
 
   private handlePing(challenge: string): void {
+    this.callbacks.onPing(challenge)
     this.send({ type: "PONG", echo: challenge });
+    this.callbacks.onPong(challenge)
   }
 
   private handleContext(message: ContextSnapshotMessage): void {

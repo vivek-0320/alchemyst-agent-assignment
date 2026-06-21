@@ -1,11 +1,11 @@
 "use client";
 import { AgentClient } from '@/lib/client';
 import { ConnectionState } from '@/lib/callbacks';
-import { applyTurnEvent } from '@/lib/turnReducer';
-import { TurnState } from '@/lib/turnTypes';
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { SessionState } from '@/lib/sessionType';
+import { applySessionEvent } from '@/lib/sessionReducer';
 
-const initialTurnState: TurnState = { blocks: [], streamEnded: false };
+const initialSessionState: SessionState = { turns: [], currentAgentTurn: null, timeline: [] };
 
 export default function useAgentClient(url?: string) {
   const clientRef = useRef<AgentClient | null>(null);
@@ -13,8 +13,13 @@ export default function useAgentClient(url?: string) {
     clientRef.current = new AgentClient(url);
   }
 
-  const [turnState, dispatch] = useReducer(applyTurnEvent, initialTurnState);
+  const [session, dispatch] = useReducer(applySessionEvent, initialSessionState);
   const [connectionState, setConnectionState] = useState<ConnectionState>("idle");
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+
+  const toggleHighlight = useCallback((id: string) => {
+    setHighlightedId(prev => prev === id ? null : id);
+  }, []);
 
   useEffect(() => {
     const client = clientRef.current!;
@@ -24,23 +29,28 @@ export default function useAgentClient(url?: string) {
         dispatch({ kind: "toolCall", callId, toolName, args, streamId }),
       onToolResult: (callId, result) => dispatch({ kind: "toolResult", callId, result }),
       onStreamEnd: (streamId) => dispatch({ kind: "streamEnd", streamId }),
-      onContext: () => { },
+      onContext: (contextId, data) => dispatch({ kind: "context", contextId, data }),
       onError: (code, message) => console.error(`[agent error] ${code}: ${message}`),
       onConnectionStateChange: setConnectionState,
+      onPing: (challenge) => dispatch({ kind: "ping", challenge }),
+      onPong: (echo) => dispatch({ kind: "pong", echo })
     });
 
     return () => client.disconnect();
   }, []);
 
   const sendMessage = useCallback((content: string) => {
-    dispatch({ kind: "reset" });
+    dispatch({ kind: "userMessage", content });
     clientRef.current?.sendUserMessage(content);
   }, []);
 
   return {
-    blocks: turnState.blocks,
-    streamEnded: turnState.streamEnded,
+    turns: session.turns,
+    currentAgentTurn: session.currentAgentTurn,
     connectionState,
     sendMessage,
+    session,
+    highlightedId,
+    toggleHighlight
   };
 }
