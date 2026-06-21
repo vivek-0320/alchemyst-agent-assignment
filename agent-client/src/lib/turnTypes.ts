@@ -8,8 +8,7 @@ export type TurnEvent =
       streamId: string;
     }
   | { kind: "toolResult"; callId: string; result: Record<string, unknown> }
-  | { kind: "streamEnd"; streamId: string }
-  | { kind: "reset" };
+  | { kind: "streamEnd"; streamId: string };
 
 export interface TextBlock {
   id: string;

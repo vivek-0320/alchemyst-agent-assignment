@@ -10,9 +10,11 @@ const ConnectionBadge = ({ state }: { state: ConnectionState }) => {
         disconnected: "text-red-500",
     };
 
+    const isPulsing = state === "connecting" || state === "reconnecting";
+
     return (
         <div
-            className={`fixed top-4 right-4 flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium shadow-sm ${stateColors[state]} animate-pulse `}
+            className={`fixed top-4 right-4 flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium shadow-sm ${stateColors[state]} ${isPulsing ? "animate-pulse" : ""}`}
         >
             <Circle className="h-3 w-3" fill="currentColor" />
             <span className="capitalize text-gray-700">

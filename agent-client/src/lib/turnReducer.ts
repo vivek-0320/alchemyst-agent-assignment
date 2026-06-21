@@ -1,12 +1,7 @@
-import { TurnState, TurnEvent, Block, TextBlock } from "@/lib/turnTypes";
-import { ToolBlock } from "./turnTypes";
+import { TurnState, TurnEvent, Block, TextBlock, ToolBlock } from "@/lib/turnTypes";
 
 function assertNever(x: never): never {
     throw new Error(`Unhandled TurnEvent: ${JSON.stringify(x)}`);
-}
-
-function newBlockId(): string {
-    return crypto.randomUUID();
 }
 
 export function applyTurnEvent(state: TurnState, event: TurnEvent): TurnState {
@@ -16,7 +11,7 @@ export function applyTurnEvent(state: TurnState, event: TurnEvent): TurnState {
 
             if (last === undefined || last.type === "tool") {
                 const fresh: TextBlock = {
-                    id: newBlockId(),
+                    id: crypto.randomUUID(),
                     type: "text",
                     content: event.text,
                 };
@@ -64,10 +59,7 @@ export function applyTurnEvent(state: TurnState, event: TurnEvent): TurnState {
         case "streamEnd":
             return { blocks: state.blocks, streamEnded: true };
 
-        case "reset":
-            return { blocks: [], streamEnded: false };
-
         default:
-            return assertNever(event as never);
+            return assertNever(event);
     }
 }

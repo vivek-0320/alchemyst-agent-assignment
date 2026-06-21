@@ -86,11 +86,10 @@ const Timeline = ({ rows, highlightedId, onSelect }: TimelineProps) => {
                         key={cat}
                         type="button"
                         onClick={() => toggleCategory(cat)}
-                        className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
-                            isCategoryActive(cat)
+                        className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${isCategoryActive(cat)
                                 ? "bg-indigo-100 border-indigo-300 text-indigo-700"
                                 : "bg-gray-100 border-gray-200 text-gray-400"
-                        }`}
+                            }`}
                     >
                         {CATEGORY_LABELS[cat]}
                     </button>
@@ -110,13 +109,15 @@ const Timeline = ({ rows, highlightedId, onSelect }: TimelineProps) => {
                 {filteredRows.length === 0 ? (
                     <div className="text-xs text-gray-400 text-center py-6">No matching events</div>
                 ) : (
-                    filteredRows.map((row) => (
-                        <TimelineRowView
-                            key={row.id}
-                            row={row}
-                            isHighlighted={highlightedId === row.id}
-                            onSelect={onSelect}
-                        />
+                    filteredRows.map((row, index) => (
+                        <div key={`${row.id}-${index}`} className='shadow-md' >
+                            <TimelineRowView
+                                row={row}
+                                isHighlighted={highlightedId === row.id}
+                                onSelect={onSelect}
+                            />
+                        </div>
+
                     ))
                 )}
             </div>

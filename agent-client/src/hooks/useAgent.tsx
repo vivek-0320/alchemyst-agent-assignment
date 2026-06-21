@@ -30,7 +30,7 @@ export default function useAgentClient(url?: string) {
       onToolResult: (callId, result) => dispatch({ kind: "toolResult", callId, result }),
       onStreamEnd: (streamId) => dispatch({ kind: "streamEnd", streamId }),
       onContext: (contextId, data) => dispatch({ kind: "context", contextId, data }),
-      onError: (code, message) => console.error(`[agent error] ${code}: ${message}`),
+      onError: (code, message) => dispatch({ kind: "error", code, message }),
       onConnectionStateChange: setConnectionState,
       onPing: (challenge) => dispatch({ kind: "ping", challenge }),
       onPong: (echo) => dispatch({ kind: "pong", echo })

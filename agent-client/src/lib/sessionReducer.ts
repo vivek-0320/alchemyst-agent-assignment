@@ -83,24 +83,24 @@ function appendOrBatchTimeline(
             lastTokenAt: now,
         }];
     }
-    const id = crypto.randomUUID();
+
     switch (event.kind) {
         case "toolCall":
             return [...timeline, { kind: "toolCall", id: event.callId, callId: event.callId, toolName: event.toolName, args: event.args, streamId: event.streamId, timestamp: now }];
         case "toolResult":
-            return [...timeline, { kind: "toolResult", id, callId: event.callId, result: event.result, timestamp: now }];
+            return [...timeline, { kind: "toolResult", id: crypto.randomUUID(), callId: event.callId, result: event.result, timestamp: now }];
         case "context":
-            return [...timeline, { kind: "context", id, contextId: event.contextId, data: event.data, timestamp: now }];
+            return [...timeline, { kind: "context", id: crypto.randomUUID(), contextId: event.contextId, data: event.data, timestamp: now }];
         case "ping":
-            return [...timeline, { kind: "ping", id, challenge: event.challenge, timestamp: now }];
+            return [...timeline, { kind: "ping", id: crypto.randomUUID(), challenge: event.challenge, timestamp: now }];
         case "pong":
-            return [...timeline, { kind: "pong", id, echo: event.echo, timestamp: now }];
+            return [...timeline, { kind: "pong", id: crypto.randomUUID(), echo: event.echo, timestamp: now }];
         case "error":
-            return [...timeline, { kind: "error", id, code: event.code, message: event.message, timestamp: now }];
+            return [...timeline, { kind: "error", id: crypto.randomUUID(), code: event.code, message: event.message, timestamp: now }];
         case "streamEnd":
-            return [...timeline, { kind: "streamEnd", id, streamId: event.streamId, timestamp: now }];
+            return [...timeline, { kind: "streamEnd", id: crypto.randomUUID(), streamId: event.streamId, timestamp: now }];
         case "userMessage":
-            return [...timeline, { kind: "userMessage", id, content: event.content, timestamp: now }];
+            return [...timeline, { kind: "userMessage", id: crypto.randomUUID(), content: event.content, timestamp: now }];
         default:
             return timeline;
     }

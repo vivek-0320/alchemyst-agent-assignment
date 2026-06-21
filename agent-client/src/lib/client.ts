@@ -11,7 +11,7 @@ import {
 import { EventLog } from "@/lib/eventLog";
 import { AgentClientCallbacks, ConnectionState } from "@/lib/callbacks";
 
-const BACKOFF_SCHEDULE_MS = [500, 1000, 2000, 4000]; // then cap at 10000
+const BACKOFF_SCHEDULE_MS = [500, 1000, 2000, 4000];
 const BACKOFF_CAP_MS = 10000;
 
 export class AgentClient {
@@ -21,9 +21,6 @@ export class AgentClient {
 
   private eventLog: EventLog;
 
-  private streamBuffers: Map<string, string> = new Map();
-
-  // ── Reconnection state ──────────────────────────────────────
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempt: number = 0;
   private intentionalDisconnect: boolean = false;
@@ -34,14 +31,10 @@ export class AgentClient {
     this.eventLog = new EventLog(0);
   }
 
-  // ─────────────────────────────────────────────────────────
-  // Public API
-  // ─────────────────────────────────────────────────────────
-
   public connect(callbacks: AgentClientCallbacks): void {
     this.callbacks = callbacks;
     this.intentionalDisconnect = false;
-    this.openSocket(/* isReconnect */ false);
+    this.openSocket(false);
   }
 
   public disconnect(): void {
@@ -51,7 +44,7 @@ export class AgentClient {
       this.reconnectTimer = null;
     }
     const socket = this.socket;
-    this.socket = null; 
+    this.socket = null;
     if (socket) {
       socket.close(1000, "client disconnect");
     }
@@ -60,7 +53,6 @@ export class AgentClient {
 
   public sendUserMessage(content: string): void {
     this.eventLog.startNewTurn();
-    this.streamBuffers.clear();
     this.send({ type: "USER_MESSAGE", content });
   }
 
@@ -72,17 +64,13 @@ export class AgentClient {
     return this.connectionState;
   }
 
-  // ─────────────────────────────────────────────────────────
-  // Connection lifecycle
-  // ─────────────────────────────────────────────────────────
-
   private openSocket(isReconnect: boolean): void {
     this.setConnectionState(isReconnect ? "reconnecting" : "connecting");
     const socket = new WebSocket(this.url);
     this.socket = socket;
 
     socket.onopen = () => {
-      if (this.socket !== socket) return; 
+      if (this.socket !== socket) return;
       this.reconnectAttempt = 0;
       this.setConnectionState("connected");
 
@@ -99,7 +87,6 @@ export class AgentClient {
 
     socket.onerror = (event: Event) => {
       if (this.socket !== socket) return;
-
       console.log("[AgentClient] WebSocket error", event);
     };
 
@@ -122,13 +109,12 @@ export class AgentClient {
   private scheduleReconnect(): void {
     this.setConnectionState("reconnecting");
 
-    const delay =
-      BACKOFF_SCHEDULE_MS[this.reconnectAttempt] ?? BACKOFF_CAP_MS;
+    const delay = BACKOFF_SCHEDULE_MS[this.reconnectAttempt] ?? BACKOFF_CAP_MS;
     this.reconnectAttempt += 1;
 
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     this.reconnectTimer = setTimeout(() => {
-      this.openSocket(/* isReconnect */ true);
+      this.openSocket(true);
     }, delay);
   }
 
@@ -137,10 +123,6 @@ export class AgentClient {
     this.callbacks?.onConnectionStateChange(state);
   }
 
-  // ─────────────────────────────────────────────────────────
-  // Sending
-  // ─────────────────────────────────────────────────────────
-
   private send(message: ClientMessage): void {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify(message));
@@ -148,10 +130,6 @@ export class AgentClient {
       console.warn("[AgentClient] Dropped send, socket not open:", message);
     }
   }
-
-  // ─────────────────────────────────────────────────────────
-  // Receiving
-  // ─────────────────────────────────────────────────────────
 
   private handleRawMessage(event: MessageEvent): void {
     let message: ServerMessage;
@@ -197,9 +175,9 @@ export class AgentClient {
   }
 
   private handlePing(challenge: string): void {
-    this.callbacks.onPing(challenge)
+    this.callbacks.onPing(challenge);
     this.send({ type: "PONG", echo: challenge });
-    this.callbacks.onPong(challenge)
+    this.callbacks.onPong(challenge);
   }
 
   private handleContext(message: ContextSnapshotMessage): void {
@@ -207,27 +185,20 @@ export class AgentClient {
   }
 
   private handleToken(message: TokenMessage): void {
-    const current = this.streamBuffers.get(message.stream_id) ?? "";
-    this.streamBuffers.set(message.stream_id, current + message.text);
     this.callbacks.onToken(message.stream_id, message.text);
   }
 
   private handleStreamEnd(message: StreamEndMessage): void {
-    const fullText = this.streamBuffers.get(message.stream_id) ?? "";
-    this.callbacks.onStreamEnd(message.stream_id, fullText);
-    this.streamBuffers.delete(message.stream_id);
+    this.callbacks.onStreamEnd(message.stream_id);
   }
 
   private handleToolCall(message: ToolCallMessage): void {
-    const precedingText = this.streamBuffers.get(message.stream_id) ?? "";
     this.callbacks.onToolCall(
       message.call_id,
       message.tool_name,
       message.args,
-      message.stream_id,
-      precedingText
+      message.stream_id
     );
-
     this.sendToolAck(message.call_id);
   }
 
